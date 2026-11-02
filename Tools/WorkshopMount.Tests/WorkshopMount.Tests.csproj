@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Editor/WorkshopMount/CompiledResource.cs" Link="CompiledResource.cs" />
+    <Compile Include="../../Editor/WorkshopMount/BinaryKv3.cs" Link="BinaryKv3.cs" />
+    <Compile Include="../../Editor/WorkshopMount/MountPathIndex.cs" Link="MountPathIndex.cs" />
+    <Compile Include="../../Editor/WorkshopMount/WorkshopDuplicateScanner.cs" Link="WorkshopDuplicateScanner.cs" />
+  </ItemGroup>
+</Project>
