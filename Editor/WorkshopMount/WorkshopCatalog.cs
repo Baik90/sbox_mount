@@ -5,7 +5,11 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 
+#if WORKSHOP_MOUNT_PLUGIN
+namespace SboxMount.Runtime;
+#else
 namespace SboxMount;
+#endif
 
 internal sealed record WorkshopGame( string Ident, string Title, string WorkshopId, string Directory = null, string Folder = null, string Type = null )
 {

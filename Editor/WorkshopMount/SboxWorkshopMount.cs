@@ -3,9 +3,17 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Sandbox.Mounting;
+#if !WORKSHOP_MOUNT_PLUGIN
 using Editor.Mcp;
+#endif
 
+#if WORKSHOP_MOUNT_PLUGIN
+namespace SboxMount.Runtime;
+#else
 namespace SboxMount;
+#endif
+
+#if WORKSHOP_MOUNT_PLUGIN
 
 /// <summary>Asset-only editor mount for all locally installed Steam Workshop subscriptions.</summary>
 public sealed class SboxWorkshopMount : BaseGameMount
@@ -73,10 +81,12 @@ public sealed class SboxWorkshopMount : BaseGameMount
             SourceStats.Add( new { game.Ident, game.Title, game.WorkshopId, game.FolderName, Models = models, Materials = materials, Textures = textures, Sounds = sounds, ScenesDeferred = scenes, PrefabsDeferred = prefabs } );
         }
         pathIndex = new MountPathIndex( $"mount://{Ident}", Resources.Select( r => r.Path ) );
-        WorkshopDuplicateView.Restore( DuplicateInputs.ToArray() );
+
         IsMounted = true;
         return Task.CompletedTask;
     }
+
+    public string[][] GetAssetManifest() => DuplicateInputs.Select( x => new[] { x.MountPath, x.WorkshopId, x.Title, x.Root, x.RelativePath, x.Kind } ).ToArray();
 
     private WorkshopAssetCache GetCache( string identOrId )
     {
@@ -114,6 +124,9 @@ public sealed class SboxWorkshopMount : BaseGameMount
     }
 }
 
+#endif
+
+#if !WORKSHOP_MOUNT_PLUGIN
 [McpToolset( "workshop_mount", "Asset-only Workshop mount prototype: enable, inspect and test isolated resources." )]
 public static class WorkshopMountTools
 {
@@ -170,7 +183,7 @@ public static class WorkshopMountTools
             return Model.Load( path );
         var game = WorkshopGame.Games.FirstOrDefault( g => path.StartsWith( g.Prefix, StringComparison.OrdinalIgnoreCase ) );
         if ( game == null ) return null;
-        var mount = Sandbox.Mounting.Directory.Get( "sbox_workshop" ) as SboxWorkshopMount;
+        var mount = SboxWorkshopMount.Get();
         path = mount.Prepare( game.Ident, path[game.Prefix.Length..] );
         // Saved scenes may contain the native cache path rather than mount://.
         // Drop a previously failed managed lookup and retry the corresponding native resource.
@@ -187,7 +200,7 @@ public static class WorkshopMountTools
     [McpTool( "workshop_mount_browser_test" )]
     public static object BrowserTest()
     {
-        var mount = Sandbox.Mounting.Directory.Get( "sbox_workshop" ) as SboxWorkshopMount;
+        var mount = SboxWorkshopMount.Get();
         if ( mount?.IsMounted != true ) throw new InvalidOperationException( "Enable the mount first." );
         var search = new SearchWidget( null );
         try
@@ -245,7 +258,7 @@ public static class WorkshopMountTools
     [McpTool( "workshop_mount_preview" )]
     public static object Preview( string game = "conna.decay", string modelPath = "models/rust_animals/bear/bear.vmdl" )
     {
-        var mount = Sandbox.Mounting.Directory.Get( "sbox_workshop" ) as SboxWorkshopMount;
+        var mount = SboxWorkshopMount.Get();
         if ( mount?.IsMounted != true ) throw new InvalidOperationException( "Enable the mount first." );
         using var streaming = EditorUtility.DisableTextureStreaming();
         var model = Model.Load( mount.Prepare( game, modelPath ) );
@@ -264,12 +277,8 @@ public static class WorkshopMountTools
     {
         string projectRoot = Project.Current.GetRootPath();
         WorkshopAssetCache.Attach( projectRoot );
-        if ( Sandbox.Mounting.Directory.Get( "sbox_workshop" ) == null )
-        {
-            var add = typeof(Sandbox.Mounting.Directory).GetMethod( "AddAssembly", BindingFlags.Static | BindingFlags.NonPublic );
-            if ( add == null ) throw new NotSupportedException( "This engine no longer exposes mount registration." );
-            add.Invoke( null, new object[] { typeof(SboxWorkshopMount).Assembly } );
-        }
+        if ( SboxWorkshopMount.Get() == null ) throw new InvalidOperationException( "Install the native mount and restart s&box." );
+        WorkshopCatalog.Refresh();
         await EditorUtility.Mounting.SetMounted( "sbox_workshop", true );
         return Status();
     }
@@ -309,7 +318,7 @@ public static class WorkshopMountTools
     [McpTool.ReadOnly( "workshop_mount_status" )]
     public static object Status()
     {
-        var mount = Sandbox.Mounting.Directory.Get( "sbox_workshop" ) as SboxWorkshopMount;
+        var mount = SboxWorkshopMount.Get();
         return new
         {
             Mounted = mount?.IsMounted ?? false,
@@ -346,7 +355,7 @@ public static class WorkshopMountTools
     [McpTool( "workshop_mount_test" )]
     public static object Test()
     {
-        var mount = Sandbox.Mounting.Directory.Get( "sbox_workshop" ) as SboxWorkshopMount;
+        var mount = SboxWorkshopMount.Get();
         if ( mount?.IsMounted != true ) throw new InvalidOperationException( "Call workshop_mount_enable first." );
         var before = ForeignAssemblies();
         var models = new List<object>();
@@ -402,3 +411,5 @@ public static class WorkshopMountTools
         return result;
     }
 }
+
+#endif

@@ -157,7 +157,7 @@ public static class WorkshopVisualTest
         return model;
     }
 
-    private static SboxWorkshopMount GetMount() => Sandbox.Mounting.Directory.Get( "sbox_workshop" ) is SboxWorkshopMount { IsMounted: true } mount
+    private static SboxWorkshopMount GetMount() => SboxWorkshopMount.Get() is { IsMounted: true } mount
         ? mount : throw new InvalidOperationException( "Open the S&Box Mount browser first." );
 
     private static string Hash( string path ) => Convert.ToHexString( SHA256.HashData( File.ReadAllBytes( path ) ) );

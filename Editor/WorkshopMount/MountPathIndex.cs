@@ -2,7 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+#if WORKSHOP_MOUNT_PLUGIN
+namespace SboxMount.Runtime;
+#else
 namespace SboxMount;
+#endif
 
 /// <summary>Immutable-after-construction directory index. Traversal never rescans the mount's resource list.</summary>
 internal sealed class MountPathIndex

@@ -2,7 +2,11 @@ using System;
 using System.IO;
 using System.Text;
 
+#if WORKSHOP_MOUNT_PLUGIN
+namespace SboxMount.Runtime;
+#else
 namespace SboxMount;
+#endif
 
 /// <summary>
 /// Narrow KV3 v2-v4 string-table rebaser. Does not deserialize or instantiate any game objects.

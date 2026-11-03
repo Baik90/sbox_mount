@@ -2,7 +2,11 @@ using System;
 using System.IO;
 using System.Text;
 
+#if WORKSHOP_MOUNT_PLUGIN
+namespace SboxMount.Runtime;
+#else
 namespace SboxMount;
+#endif
 
 /// <summary>Rebases Source 2 v12 RERL and supported binary KV3 string tables.</summary>
 internal static class CompiledResource

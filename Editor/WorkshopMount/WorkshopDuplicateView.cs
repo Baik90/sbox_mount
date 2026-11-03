@@ -17,6 +17,16 @@ internal static class WorkshopDuplicateView
     internal static bool Enabled { get; set; } = true;
     internal static bool IsHidden( string path ) => Enabled && hidden.Contains( path );
 
+    // Only compare actual shipped resources, never classify by a generic name such as default_*.
+    internal static WorkshopDuplicateScanner.Input[] WithCore( WorkshopDuplicateScanner.Input[] inventory )
+    {
+        string root = Path.Combine( WorkshopGame.EngineRoot, "core" );
+        var core = inventory.GroupBy( i => i.RelativePath, StringComparer.OrdinalIgnoreCase )
+            .Where( g => File.Exists( Path.Combine( root, g.Key ) ) )
+            .Select( g => new WorkshopDuplicateScanner.Input( "core://" + g.Key, "core", "s&box Core", root, g.Key, g.First().Kind ) );
+        return inventory.Concat( core ).ToArray();
+    }
+
     internal static void Apply( WorkshopDuplicateScanner.Result result )
     {
         Result = result;
@@ -34,8 +44,8 @@ internal static class WorkshopDuplicateView
         {
             if ( !File.Exists( ReportPath ) ) return;
             var result = JsonSerializer.Deserialize<WorkshopDuplicateScanner.Result>( File.ReadAllText( ReportPath ) );
-            if ( result?.Version != 2 || result.Inventory == null || result.Files == null || result.ExternalPaths == null || result.Groups == null ) return;
-            if ( !result.Inventory.SequenceEqual( WorkshopDuplicateScanner.InventoryKeys( inventory ) ) ) return;
+            if ( result?.Version != 3 || result.Inventory == null || result.Files == null || result.ExternalPaths == null || result.Groups == null ) return;
+            if ( !result.Inventory.SequenceEqual( WorkshopDuplicateScanner.InventoryKeys( WithCore( inventory ) ) ) ) return;
             if ( !result.Files.All( WorkshopDuplicateScanner.IsCurrent ) ) return;
             if ( result.ExternalPaths.Any( File.Exists ) ) return;
             Apply( result );
@@ -71,9 +81,9 @@ public static class WorkshopDuplicateTools
     public static async Task<object> Scan()
     {
         if ( running ) throw new InvalidOperationException( "A duplicate scan is already running; use workshop_mount_duplicate_status." );
-        var mount = Sandbox.Mounting.Directory.Get( "sbox_workshop" ) as SboxWorkshopMount;
+        var mount = SboxWorkshopMount.Get();
         if ( mount?.IsMounted != true ) throw new InvalidOperationException( "Open the Workshop mount browser first." );
-        var inventory = mount.DuplicateInputs.ToArray();
+        var inventory = WorkshopDuplicateView.WithCore( mount.DuplicateInputs.ToArray() );
         Guid revision = mount.InventoryRevision;
         string report = WorkshopDuplicateView.ReportPath;
         running = true;
@@ -137,6 +147,8 @@ public static class WorkshopDuplicateTools
             Scope = "Combined flat/search view only; per-game views preserve every asset",
             ScannedResources = result?.Total ?? 0, HashedFiles = result?.HashedFiles ?? 0,
             DuplicateGroups = result?.Groups.Length ?? 0, HiddenCopies = result?.HiddenCopies ?? 0,
+            CoreGroups = result?.Groups.Count( g => g.Sources[0].WorkshopId == "core" ) ?? 0,
+            HiddenCoreCopies = result?.Groups.Where( g => g.Sources[0].WorkshopId == "core" ).Sum( g => g.Sources.Length - 1 ) ?? 0,
             Unverified = result?.Unverified.Take( 10 ).ToArray(), UnverifiedCount = result?.Unverified.Length ?? 0,
             MatchingGroups = groups.Length,
             Groups = groups.Take( Math.Clamp( limit, 1, 100 ) ).Select( g => new { g.Kind,
@@ -150,7 +162,7 @@ public static class WorkshopDuplicateTools
     [McpTool( "workshop_mount_duplicate_view_test" )]
     public static object TestView()
     {
-        var mount = Sandbox.Mounting.Directory.Get( "sbox_workshop" ) as SboxWorkshopMount;
+        var mount = SboxWorkshopMount.Get();
         var result = WorkshopDuplicateView.Result ?? throw new InvalidOperationException( "Scan duplicates first." );
         if ( !WorkshopDuplicateView.Enabled || WorkshopAssetCache.MarkerEnabled ) throw new InvalidOperationException( "Enable duplicate hiding and disable the red marker first." );
         var search = new SearchWidget( null );

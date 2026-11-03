@@ -2,7 +2,11 @@ using System;
 using System.IO;
 using System.Reflection;
 
+#if WORKSHOP_MOUNT_PLUGIN
+namespace SboxMount.Runtime;
+#else
 namespace SboxMount;
+#endif
 
 /// <summary>Local, lazy asset cache. Never installs packages or opens .bin archives.</summary>
 internal sealed class WorkshopAssetCache
@@ -28,14 +32,9 @@ internal sealed class WorkshopAssetCache
 
     internal static void Attach( string projectRoot )
     {
-        string root = Path.GetFullPath( Path.Combine( projectRoot, ".sbox/workshop-mount-cache/v3" ) );
+        string root = Path.Combine( WorkshopGame.EngineRoot, "mount/sbox_workshop/Assets" );
         if ( CacheRoot == root ) return;
         System.IO.Directory.CreateDirectory( root );
-        // Engine integration is intentionally confined to the editor prototype.
-        var engineFs = typeof(Model).Assembly.GetType( "Sandbox.EngineFileSystem", true );
-        var add = engineFs.GetMethod( "AddAssetPath", BindingFlags.Static | BindingFlags.NonPublic );
-        if ( add == null ) throw new NotSupportedException( "This engine no longer exposes AddAssetPath." );
-        add.Invoke( null, new object[] { "sbox_workshop_prototype_v3", root } );
         CacheRoot = root;
     }
 
@@ -43,7 +42,7 @@ internal sealed class WorkshopAssetCache
     {
         // Mounts are also activated by project settings/browser controls after restart,
         // without passing through WorkshopMountTools.Enable. Native loads must be self-sufficient.
-        if ( CacheRoot == null ) Attach( Project.Current.GetRootPath() );
+        if ( CacheRoot == null ) Attach( null );
         string path = Normalize( resourcePath );
         string compiled = path.EndsWith( "_c", StringComparison.Ordinal ) ? path : path + "_c";
         string nativePath = game.Prefix + (path.EndsWith( "_c", StringComparison.Ordinal ) ? path[..^2] : path);

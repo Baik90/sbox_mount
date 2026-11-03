@@ -70,6 +70,13 @@ try
     Check(duplicates.Groups[0].Sources.Select(s=>s.WorkshopId).SequenceEqual(new[]{"a","c"}),"Different transitive texture was collapsed");
     Check(duplicates.HiddenCopies==1,"Incorrect hidden count");
     Check(duplicates.Unverified.Length==0,"Valid dependencies were rejected");
+    foreach(var relative in new[]{"models/shared.vmdl_c","materials/shared.vmat_c","textures/shared.vtex_c"})
+        WriteFixture("core",relative,File.ReadAllBytes(Path.Combine(fixture,"a",relative)));
+    var coreInput=Input("core") with { MountPath="core://models/shared.vmdl_c" };
+    var withCore=new WorkshopDuplicateScanner(default).Scan(new[]{Input("a"),Input("b"),Input("c"),coreInput});
+    Check(withCore.Groups.Length==1 && withCore.Groups[0].Sources[0].WorkshopId=="core","Core was not preferred over a Workshop copy");
+    Check(withCore.HiddenCopies==2,"Core copies were counted incorrectly");
+    Check(!withCore.Groups[0].Sources.Any(s=>s.WorkshopId=="b"),"Core comparison hid a modified dependency variant");
     WriteFixture("c","textures/shared.vtex_c",Resource(Array.Empty<string>(),2));
     var changedStamp=duplicates.Files.Single(s=>s.Path.Replace('\\','/').EndsWith("/c/textures/shared.vtex_c",StringComparison.OrdinalIgnoreCase));
     // Force a different stamp even on filesystems with coarse timestamp resolution.

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>sbox_workshop</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <DefineConstants>$(DefineConstants);WORKSHOP_MOUNT_PLUGIN</DefineConstants>
+    <SboxEngineRoot Condition="'$(SboxEngineRoot)' == ''">$(MSBuildThisFileDirectory)../../..</SboxEngineRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Sandbox" />
+    <Compile Include="../Editor/WorkshopMount/SboxWorkshopMount.cs" />
+    <Compile Include="../Editor/WorkshopMount/WorkshopAssetCache.cs" />
+    <Compile Include="../Editor/WorkshopMount/WorkshopCatalog.cs" />
+    <Compile Include="../Editor/WorkshopMount/CompiledResource.cs" />
+    <Compile Include="../Editor/WorkshopMount/BinaryKv3.cs" />
+    <Compile Include="../Editor/WorkshopMount/MountPathIndex.cs" />
+    <Compile Include="../Editor/WorkshopMount/WorkshopDuplicateScanner.cs" />
+    <Reference Include="Sandbox.System"><HintPath>$(SboxEngineRoot)/bin/managed/Sandbox.System.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Sandbox.Engine"><HintPath>$(SboxEngineRoot)/bin/managed/Sandbox.Engine.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Sandbox.Filesystem"><HintPath>$(SboxEngineRoot)/bin/managed/Sandbox.Filesystem.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Sandbox.Reflection"><HintPath>$(SboxEngineRoot)/bin/managed/Sandbox.Reflection.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Sandbox.Mounting"><HintPath>$(SboxEngineRoot)/bin/managed/Sandbox.Mounting.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

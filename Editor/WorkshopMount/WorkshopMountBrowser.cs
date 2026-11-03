@@ -16,7 +16,7 @@ public sealed class WorkshopMountBrowser : MountsAssetBrowser
 
     public override void UpdateAssetList()
     {
-        if ( CurrentLocation is MountLocation location && location.Source is SboxWorkshopMount mount )
+        if ( CurrentLocation is MountLocation location && SboxWorkshopMount.From( location.Source ) is { } mount )
             CurrentLocation = new IndexedWorkshopLocation( mount, location.Path,
                 location.Path.TrimEnd( '/' ).Equals( $"mount://{mount.Ident}", System.StringComparison.OrdinalIgnoreCase )
                 && (ShowRecursiveFiles || !Search.IsEmpty)
@@ -30,7 +30,7 @@ internal sealed record IndexedWorkshopLocation : MountLocation
     private readonly SboxWorkshopMount mount;
     private readonly bool combinedView;
 
-    internal IndexedWorkshopLocation( SboxWorkshopMount mount, string path, bool combinedView = false ) : base( mount, path )
+    internal IndexedWorkshopLocation( SboxWorkshopMount mount, string path, bool combinedView = false ) : base( mount.Source, path )
     { this.mount = mount; this.combinedView = combinedView; }
 
     public override IEnumerable<AssetBrowser.Location> GetDirectories()

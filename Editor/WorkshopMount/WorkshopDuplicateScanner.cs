@@ -6,7 +6,11 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
+#if WORKSHOP_MOUNT_PLUGIN
+namespace SboxMount.Runtime;
+#else
 namespace SboxMount;
+#endif
 
 /// <summary>Conservative equality: original compiled bytes and all locally resolved RERL dependencies must match.</summary>
 internal sealed class WorkshopDuplicateScanner
@@ -16,7 +20,7 @@ internal sealed class WorkshopDuplicateScanner
     internal sealed record Group( string Fingerprint, string Kind, Input[] Sources );
     internal sealed class Result
     {
-        public int Version { get; set; } = 2;
+        public int Version { get; set; } = 3;
         public string[] Inventory { get; set; }
         public Stamp[] Files { get; set; }
         public string[] ExternalPaths { get; set; }
@@ -71,7 +75,7 @@ internal sealed class WorkshopDuplicateScanner
             }
             foreach ( var group in verified.GroupBy( x => x.Fingerprint ).Where( g => g.Count() > 1 ) )
                 groups.Add( new Group( group.Key, rawGroup.Key.Kind, group.Select( x => x.Item )
-                    .OrderBy( x => x.WorkshopId, StringComparer.Ordinal ).ThenBy( x => x.MountPath, StringComparer.Ordinal ).ToArray() ) );
+                    .OrderBy( x => x.WorkshopId == "core" ? 0 : 1 ).ThenBy( x => x.WorkshopId, StringComparer.Ordinal ).ThenBy( x => x.MountPath, StringComparer.Ordinal ).ToArray() ) );
         }
         // A Steam update during the scan invalidates its result rather than hiding uncertain variants.
         if ( stamps.Values.Any( s => !IsCurrent( s ) ) || externalPaths.Any( File.Exists ) ) throw new IOException( "Workshop files changed during scanning. Please scan again after Steam finishes updating." );
